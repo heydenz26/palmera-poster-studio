@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Palmera Poster Studio — GTA-style cover art, offline</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark">PS</span>
+    <div>
+      <h1>Palmera Poster Studio</h1>
+      <p>Turn any photo into GTA-style multi-panel cover art — 100% offline, photos never leave this machine.</p>
+    </div>
+  </div>
+  <div class="top-actions">
+    <button id="undo" class="btn-ghost" type="button" title="Undo (Ctrl/Cmd+Z)" disabled>Undo</button>
+    <button id="export" class="btn-primary" type="button">Export PNG</button>
+  </div>
+</header>
+
+<main class="layout">
+  <aside class="controls" aria-label="Cover controls">
+    <section>
+      <h2>1 · Photos</h2>
+      <label class="file-btn" for="photo">Add photos (up to 3)
+        <input id="photo" type="file" accept="image/*" multiple hidden>
+      </label>
+      <div id="thumbs" class="thumbs" aria-label="Loaded photos"></div>
+      <p class="hint">Click a thumbnail to put that photo in the selected panel.</p>
+    </section>
+
+    <section>
+      <h2>2 · Layout</h2>
+      <div class="btn-row" role="group" aria-label="Layout">
+        <button type="button" data-layout="trio" class="btn active">Hero Trio</button>
+        <button type="button" data-layout="strip" class="btn">Triple Strip</button>
+        <button type="button" data-layout="duo" class="btn">Duo Poster</button>
+        <button type="button" data-layout="quad" class="btn">Quad Grid</button>
+      </div>
+      <p class="hint">Click a panel in the preview to select it, then drag to position its photo.</p>
+      <div class="btn-row" role="group" aria-label="Select panel">
+        <button type="button" data-panel="0" class="btn small active">Panel 1</button>
+        <button type="button" data-panel="1" class="btn small">Panel 2</button>
+        <button type="button" data-panel="2" class="btn small">Panel 3</button>
+        <button type="button" data-panel="3" class="btn small">Panel 4</button>
+      </div>
+      <label class="field">Photo in selected panel
+        <select id="panel-photo"></select>
+      </label>
+      <label class="field">Colour grade for this panel
+        <select id="panel-grade"></select>
+      </label>
+      <label class="field">Zoom
+        <input id="zoom" type="range" min="0" max="200" value="0">
+      </label>
+      <button id="reset-panel" type="button" class="btn small">Reset panel crop</button>
+      <label class="switch-row">
+        <input id="facesafe" type="checkbox" checked>
+        <span>Face-safe framing</span>
+      </label>
+      <p class="hint">While on, dragging keeps heads and chins inside the frame.</p>
+    </section>
+
+    <section>
+      <h2>3 · Colour grade</h2>
+      <div class="btn-row" role="group" aria-label="Colour grade">
+        <button type="button" data-grade="sunset" class="btn grade-sunset active">Vice Sunset</button>
+        <button type="button" data-grade="neon" class="btn grade-neon">Neon Nights</button>
+        <button type="button" data-grade="gold" class="btn grade-gold">Gold Hour</button>
+        <button type="button" data-grade="noir" class="btn grade-noir">Noir Red</button>
+        <button type="button" data-grade="acid" class="btn grade-acid">Acid Arcade</button>
+        <button type="button" data-grade="frost" class="btn grade-frost">Frostbite</button>
+      </div>
+      <p class="hint">The cover grade tints every panel; use the per-panel dropdown above to let one panel stand out.</p>
+    </section>
+
+    <section>
+      <h2>4 · Lettering</h2>
+      <label class="field">Title
+        <input id="caption" type="text" value="Sunset Heist" maxlength="40">
+      </label>
+      <label class="field">Subtitle
+        <input id="subtitle" type="text" value="Palmera • Vice Coast" maxlength="60">
+      </label>
+      <label class="field">Corner tag
+        <input id="tag" type="text" value="Palmera" maxlength="20">
+      </label>
+      <label class="field range-field">Caption size
+        <span class="range-head"><input id="capsize" type="range" min="40" max="150" value="100"><b id="capsize-val" class="range-val">100%</b></span>
+      </label>
+    </section>
+
+    <section>
+      <h2>5 · Post size</h2>
+      <div class="btn-row" role="group" aria-label="Export size">
+        <button type="button" data-size="square" class="btn">1080 × 1080</button>
+        <button type="button" data-size="portrait" class="btn">1080 × 1350</button>
+        <button type="button" data-size="wide" class="btn active">1920 × 1080</button>
+      </div>
+      <p class="hint">One click exports a PNG at the chosen size — ready to post.</p>
+    </section>
+  </aside>
+
+  <section class="preview" aria-label="Live preview">
+    <canvas id="cover" width="1920" height="1080"></canvas>
+    <p id="status" class="status" role="status">Loading sample photos…</p>
+  </section>
+</main>
+
+<footer class="foot">
+  <span>Palmera Poster Studio — original art and lettering, no Rockstar assets. Built for make.fun gta6-cover-art-01.</span>
+</footer>
+
+<script type="module">
+  import { buildEditor } from './src/editor.js';
+  buildEditor(document);
+</script>
+</body>
+</html>
