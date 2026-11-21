@@ -3,32 +3,32 @@
     "downscale": [1280, 720],
     "h": 1080,
     "name": "1-cover.jpg",
-    "note": "Wide hero-trio cover in Vice Sunset with the caption-size control at 70%, so the title sits neatly across the wide frame.",
-    "query": "?shot=cover&size=wide&layout=trio&grade=sunset&caption=Sunset%20Heist&subtitle=Palmera%20%E2%80%A2%20Vice%20Coast&photo=pier&facesafe=1&capsize=70",
+    "note": "Wide Cover Collage in Vice Sunset: drawn Vice Skyline hero, a Neon Nights photo panel, drawn Speedboat and Muscle Car panels and a posterised photo panel — the illustrated multi-panel cover.",
+    "query": "?shot=cover&size=wide&layout=collage&grade=sunset&caption=Palmera%20Heat&subtitle=Palmera%20%E2%80%A2%20Vice%20Coast&facesafe=1&capsize=85&panels=art:skyline,photo:1@neon,art:boat,photo:0,art:car",
     "w": 1920
   },
   {
     "downscale": null,
     "h": 720,
     "name": "2-editor.jpg",
-    "note": "The editor on the new Quad Grid layout with the Acid Arcade grade, the Face-safe switch and Undo button on, a Frostbite per-panel grade override highlighted, and the caption-size control at 60% with its live percentage readout in the sidebar.",
-    "query": "?shot=editor&size=wide&layout=quad&grade=acid&caption=Boulevard%20Queen&subtitle=Palmera%20%E2%80%A2%20Vice%20Coast&photo=boulevard&facesafe=1&capsize=60&panelgrade=frost&panelgradeindex=0",
+    "note": "The editor on the Cover Collage layout with the Illustrated look on: photo and drawn-art panels mixed, art buttons and the posterise switch in the sidebar.",
+    "query": "?shot=editor&size=wide&layout=collage&grade=neon&caption=Palmera%20Heat&subtitle=Palmera%20%E2%80%A2%20Vice%20Coast&photo=boulevard&facesafe=1&capsize=70&panels=photo:1,art:skyline,photo:0,art:car,photo:1",
     "w": 1280
   },
   {
     "downscale": [1024, 1280],
     "h": 1350,
     "name": "3-cover.jpg",
-    "note": "Portrait triple-strip cover in Gold Hour with a single Frostbite-graded panel, showing the per-panel grade override.",
-    "query": "?shot=cover&size=portrait&layout=strip&grade=gold&caption=Vice%20Coast%20Nights&subtitle=Palmera%20%E2%80%A2%20Vice%20Coast&photo=boulevard&facesafe=1&capsize=100&panelgrade=frost&panelgradeindex=1",
+    "note": "Portrait Cover Collage in Gold Hour: drawn Speedboat hero, a Frostbite photo panel, the drawn Skyline and the drawn Muscle Car foot panel.",
+    "query": "?shot=cover&size=portrait&layout=collage&grade=gold&caption=Vice%20Coast%20Nights&subtitle=Palmera%20%E2%80%A2%20Vice%20Coast&facesafe=1&capsize=100&panels=art:boat,photo:0@frost,art:skyline,art:car",
     "w": 1080
   },
   {
     "downscale": null,
     "h": 1080,
     "name": "4-cover.jpg",
-    "note": "Square Duo Poster cover in Neon Nights with Face-safe framing on, so the subject's chin stays fully inside the panel edge, confirming the fix for the original crop.",
-    "query": "?shot=cover&size=square&layout=duo&grade=neon&caption=Neon%20Palmera&subtitle=Palmera%20%E2%80%A2%20Vice%20Coast&photo=pier&facesafe=1&capsize=90",
+    "note": "Square Cover Collage in Vice Sunset: drawn Vice Skyline hero over a posterised photo, the drawn Muscle Car and a posterised photo panel.",
+    "query": "?shot=cover&size=square&layout=collage&grade=sunset&caption=Neon%20Palmera&subtitle=Palmera%20%E2%80%A2%20Vice%20Coast&facesafe=1&capsize=90&panels=art:skyline,photo:1,art:car,photo:0",
     "w": 1080
   }
 ]

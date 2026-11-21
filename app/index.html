@@ -39,6 +39,7 @@
         <button type="button" data-layout="strip" class="btn">Triple Strip</button>
         <button type="button" data-layout="duo" class="btn">Duo Poster</button>
         <button type="button" data-layout="quad" class="btn">Quad Grid</button>
+        <button type="button" data-layout="collage" class="btn">Cover Collage</button>
       </div>
       <p class="hint">Click a panel in the preview to select it, then drag to position its photo.</p>
       <div class="btn-row" role="group" aria-label="Select panel">
@@ -46,6 +47,7 @@
         <button type="button" data-panel="1" class="btn small">Panel 2</button>
         <button type="button" data-panel="2" class="btn small">Panel 3</button>
         <button type="button" data-panel="3" class="btn small">Panel 4</button>
+        <button type="button" data-panel="4" class="btn small">Panel 5</button>
       </div>
       <label class="field">Photo in selected panel
         <select id="panel-photo"></select>
@@ -62,6 +64,13 @@
         <span>Face-safe framing</span>
       </label>
       <p class="hint">While on, dragging keeps heads and chins inside the frame.</p>
+      <div class="btn-row" role="group" aria-label="Art in selected panel">
+        <button type="button" data-art="skyline" class="btn small">Art: Skyline</button>
+        <button type="button" data-art="car" class="btn small">Art: Muscle Car</button>
+        <button type="button" data-art="boat" class="btn small">Art: Speedboat</button>
+        <button type="button" data-art="" class="btn small">Photo</button>
+      </div>
+      <p class="hint">Art panels are drawn scenes — no photo needed. Pick Photo to go back to a photo panel.</p>
     </section>
 
     <section>
@@ -75,6 +84,11 @@
         <button type="button" data-grade="frost" class="btn grade-frost">Frostbite</button>
       </div>
       <p class="hint">The cover grade tints every panel; use the per-panel dropdown above to let one panel stand out.</p>
+      <label class="switch-row">
+        <input id="toon" type="checkbox" checked>
+        <span>Illustrated look (posterised photos)</span>
+      </label>
+      <p class="hint">Flattens photos into bold poster colours with inked edges — the cover-art look.</p>
     </section>
 
     <section>

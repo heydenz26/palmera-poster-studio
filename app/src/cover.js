@@ -4,6 +4,10 @@
 // gutters, and the bold caption lettering with tag chips. Everything is drawn
 // in code — the app ships no artwork of its own.
 //
+// Posterise (illustration) pass: quantises photo panels to a limited palette
+// and adds edge inking for a hand-drawn look. Drawn art panels (skyline, car,
+// boat) bypass the photo branch and posterise, receiving only a light grade wash.
+//
 // Face-safe framing. Portrait photos carry the face and chin near the top, so a
 // naive cover-fit that centres the whole photo can crop a chin at a panel edge
 // (the original #4 shot did exactly that). Instead we:
@@ -15,14 +19,17 @@
 
 import { panelsFor } from './layouts.js';
 import { gradeFor } from './grades.js';
+import { drawArt } from './artwork.js';
 
 /** The top region of a photo we protect: roughly the top sixth. */
 export const FACE_GUARD = 1 / 6;
 
 /**
  * A panel's photo placement.
- * @typedef {{ photo: number, zoom: number, ox: number, oy: number, grade?: string }} PanelState
+ * @typedef {{ photo: number, zoom: number, ox: number, oy: number, grade?: string, art?: string }} PanelState
  * photo is an index into state.photos; zoom >= 1; ox/oy are pan fractions.
+ * art (optional): id of a drawn scene ('skyline'|'car'|'boat') — if set, the panel
+ * renders that vector artwork instead of a photo.
  */
 
 /**
@@ -115,6 +122,70 @@ export function drawGradeWash(ctx, rect, grade) {
 }
 
 /**
+ * Posterise (illustration) pass for a rect: quantises channels to `levels` steps
+ * and adds edge inking where luminance changes sharply.
+ * Rounds rect to integers, guards tiny rects, wrapped in try/catch.
+ */
+export function posterizeRect(ctx, rect, levels) {
+  try {
+    // Round rect to integer pixels
+    const x = Math.round(rect.x);
+    const y = Math.round(rect.y);
+    const w = Math.round(rect.w);
+    const h = Math.round(rect.h);
+    if (w < 2 || h < 2) return;
+
+    const imgData = ctx.getImageData(x, y, w, h);
+    const data = imgData.data;
+    const step = 255 / (levels - 1);
+
+    // First pass: compute luminance for each pixel
+    const lum = new Float32Array(w * h);
+    for (let i = 0, p = 0; i < w * h; i++, p += 4) {
+      const r = data[p];
+      const g = data[p + 1];
+      const b = data[p + 2];
+      lum[i] = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    }
+
+    // Second pass: quantise channels + edge inking
+    for (let j = 0; j < h; j++) {
+      for (let i = 0; i < w; i++) {
+        const idx = j * w + i;
+        const p = idx * 4;
+
+        // Quantise each channel
+        for (let c = 0; c < 3; c++) {
+          const v = data[p + c];
+          data[p + c] = Math.round(v / step) * step;
+        }
+
+        // Edge inking: compare luminance to right and below neighbours
+        let ink = false;
+        if (i + 1 < w) {
+          const diffR = Math.abs(lum[idx] - lum[idx + 1]);
+          if (diffR > 26) ink = true;
+        }
+        if (!ink && j + 1 < h) {
+          const diffD = Math.abs(lum[idx] - lum[idx + w]);
+          if (diffD > 26) ink = true;
+        }
+        if (ink) {
+          data[p] *= 0.5;
+          data[p + 1] *= 0.5;
+          data[p + 2] *= 0.5;
+        }
+      }
+    }
+
+    ctx.putImageData(imgData, x, y);
+  } catch (e) {
+    // Failure leaves the photo untouched
+    console.warn('posterizeRect failed:', e);
+  }
+}
+
+/**
  * Fits a caption to the width and draws it in bold poster lettering. The caller
  * may pass captionSize (0..1) to scale the title within a safe band; the title
  * is always fitted to the cover width and never spills past it.
@@ -140,11 +211,18 @@ export function drawTitle(ctx, w, h, title, subtitle, captionSize = 1) {
   ctx.lineJoin = 'round';
   ctx.lineWidth = Math.max(4, size * 0.14);
   ctx.strokeStyle = 'rgba(10, 5, 20, 0.92)';
-  ctx.shadowColor = 'rgba(0,0,0,0.55)';
-  ctx.shadowBlur = size * 0.18;
-  ctx.shadowOffsetY = size * 0.05;
+  // Hard offset shadow (no blur)
+  ctx.shadowColor = 'rgba(15,0,20,0.9)';
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetX = size * 0.045;
+  ctx.shadowOffsetY = size * 0.06;
   ctx.strokeText(text, 0, 0);
-  ctx.fillStyle = '#ffffff';
+  // Vertical gradient fill: #ffffff -> #ffe9bb -> #ffb37a
+  const titleGrad = ctx.createLinearGradient(0, -size * 0.6, 0, size * 0.6);
+  titleGrad.addColorStop(0, '#ffffff');
+  titleGrad.addColorStop(0.5, '#ffe9bb');
+  titleGrad.addColorStop(1, '#ffb37a');
+  ctx.fillStyle = titleGrad;
   ctx.fillText(text, 0, 0);
   ctx.restore();
   const sub = (subtitle || '').trim().toUpperCase();
@@ -193,6 +271,8 @@ export function drawChip(ctx, text, x, y, alignRight) {
  * @param {object} state { photos, panels, layout, grade, title, subtitle, tag,
  *                         faceSafe, captionSize }
  * A panel may set its own grade (place.grade) to override the cover's grade.
+ * A panel may set place.art to a scene id ('skyline'|'car'|'boat') to render
+ * drawn artwork instead of a photo.
  */
 export function drawCover(canvas, state) {
   const ctx = canvas.getContext('2d');
@@ -209,8 +289,12 @@ export function drawCover(canvas, state) {
     const img = state.photos[place.photo] || null;
     ctx.save();
     ctx.filter = grade.filter;
-    if (img) drawPanelPhoto(ctx, img, rect, place, faceSafe);
-    else {
+    if (place.art) {
+      // Drawn artwork panel — skip photo branch and posterize
+      drawArt(ctx, place.art, rect);
+    } else if (img) {
+      drawPanelPhoto(ctx, img, rect, place, faceSafe);
+    } else {
       // Empty panel: a dusk gradient so the layout still reads.
       const g = ctx.createLinearGradient(rect.x, rect.y, rect.x + rect.w, rect.y + rect.h);
       g.addColorStop(0, '#3a1c5e');
@@ -219,7 +303,18 @@ export function drawCover(canvas, state) {
       ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
     }
     ctx.restore();
-    drawGradeWash(ctx, rect, grade);
+
+    // Posterise pass for photo panels (not art panels)
+    if (!place.art && img && state.toon !== false) {
+      posterizeRect(ctx, rect, 5);
+    }
+
+    // Grade wash — for art panels use a lighter alpha (art is already coloured)
+    let washGrade = grade;
+    if (place.art) {
+      washGrade = { ...grade, alpha: grade.alpha * 0.35 };
+    }
+    drawGradeWash(ctx, rect, washGrade);
   });
   // Bottom shade for the lettering.
   const shade = ctx.createLinearGradient(0, h * 0.68, 0, h);

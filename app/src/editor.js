@@ -33,6 +33,7 @@ const DEFAULT_STATE = {
   tag: 'Palmera',
   captionSize: 1,
   faceSafe: true,
+  toon: true,
   photos: [],
   panels: [
     { photo: 0, zoom: 1, ox: 0, oy: 0 },
@@ -93,6 +94,7 @@ export function buildEditor(doc) {
       tag: s.tag,
       captionSize: s.captionSize,
       faceSafe: s.faceSafe,
+      toon: s.toon,
       selected: s.selected,
       panels: JSON.parse(JSON.stringify(s.panels)),
     };
@@ -144,92 +146,32 @@ export function buildEditor(doc) {
     const zoom = $('zoom');
     if (zoom) zoom.value = String(Math.round((state.panels[state.selected].zoom - 1) * 100));
     const panelPhoto = $('panel-photo');
-    if (panelPhoto) {
-      panelPhoto.innerHTML = state.photos.map((_, i) => `<option value="${i}">Photo ${i + 1}</option>`).join('');
-      panelPhoto.value = String(state.panels[state.selected].photo);
-    }
+    if (panelPhoto) panelPhoto.value = String(state.panels[state.selected].photo);
     const panelGrade = $('panel-grade');
-    if (panelGrade) panelGrade.value = state.panels[state.selected].grade || '';
-    const capSlider = $('capsize');
-    if (capSlider) capSlider.value = String(Math.round(state.captionSize * 100));
-    const capVal = $('capsize-val');
-    if (capVal) capVal.textContent = `${Math.round(state.captionSize * 100)}%`;
+    if (panelGrade) panelGrade.value = state.panels[state.selected].grade ?? '';
     const faceSafe = $('facesafe');
     if (faceSafe) faceSafe.checked = state.faceSafe !== false;
-  }
-
-  function panelAt(clientX, clientY) {
-    const r = canvas.getBoundingClientRect();
-    const x = (clientX - r.left) * (canvas.width / r.width);
-    const y = (clientY - r.top) * (canvas.height / r.height);
-    const rects = panelsFor(state.layout, canvas.width, canvas.height);
-    for (let i = rects.length - 1; i >= 0; i--) {
-      const p = rects[i];
-      if (x >= p.x && x <= p.x + p.w && y >= p.y && y <= p.y + p.h) return i;
-    }
-    return -1;
-  }
-
-  canvas.addEventListener('pointerdown', (e) => {
-    const i = panelAt(e.clientX, e.clientY);
-    if (i < 0) return;
-    pushUndo();
-    state.selected = i;
-    canvas.setPointerCapture(e.pointerId);
-    drag = { x: e.clientX, y: e.clientY, ox: state.panels[i].ox, oy: state.panels[i].oy };
-    redraw();
-  });
-  canvas.addEventListener('pointermove', (e) => {
-    if (!drag) return;
-    const place = state.panels[state.selected];
-    const img = state.photos[place.photo] || null;
-    const faceSafe = state.faceSafe !== false;
-    if (img) {
-      // Reuse the cover renderer's clamp so the face-safe constraint binds the
-      // drag exactly as it does the rendered cover.
-      const rect = panelsFor(state.layout, canvas.width, canvas.height)[state.selected];
-      const probe = photoDraw(null, img, rect, place, faceSafe);
-      const r = canvas.getBoundingClientRect();
-      place.ox = Math.max(-0.5, Math.min(0.5, drag.ox + (e.clientX - drag.x) / r.width));
-      const deltaO = (e.clientY - drag.y) / r.height;
-      place.oy = drag.oy + Math.max(probe.panMin - drag.oy, Math.min(probe.panMax - drag.oy, deltaO));
-    }
-    redraw();
-  });
-  canvas.addEventListener('pointerup', () => { drag = null; });
-  canvas.addEventListener('wheel', (e) => {
-    e.preventDefault();
-    const place = state.panels[state.selected];
-    pushUndo();
-    place.zoom = Math.max(1, Math.min(3, place.zoom * (e.deltaY < 0 ? 1.08 : 0.93)));
-    redraw();
-  }, { passive: false });
-
-  // Photo uploads (up to 3; each panel picks one of them).
-  $('photo').addEventListener('change', async (e) => {
-    const files = [...e.target.files].slice(0, 3);
-    for (const file of files) {
-      if (state.photos.length >= 3) break;
-      state.photos.push(await loadImage(URL.createObjectURL(file)));
-    }
-    state.panels.forEach((p, i) => { if (p.photo >= state.photos.length) p.photo = 0; });
+    const toonBox = $('toon');
+    if (toonBox) toonBox.checked = state.toon !== false;
     refreshThumbs();
-    redraw();
-    setStatus(`${state.photos.length} photo${state.photos.length === 1 ? '' : 's'} loaded — click a panel, drag to position it, Ctrl/Cmd+Z to undo.`);
-  });
+  }
 
   function refreshThumbs() {
     const box = $('thumbs');
     if (!box) return;
     box.innerHTML = '';
     state.photos.forEach((img, i) => {
-      const t = doc.createElement('img');
-      t.src = img.src;
-      t.alt = `Photo ${i + 1}`;
-      t.className = 'thumb';
+      const t = doc.createElement('button');
+      t.type = 'button';
+      t.className = 'thumb' + (i === state.panels[state.selected].photo ? ' active' : '');
+      t.title = 'Photo ' + (i + 1);
+      t.innerHTML = '<canvas></canvas>';
+      const ctx = t.querySelector('canvas').getContext('2d');
+      ctx.drawImage(img, 0, 0, 64, 64);
       t.addEventListener('click', () => {
         pushUndo();
         state.panels[state.selected].photo = i;
+        delete state.panels[state.selected].art;
         redraw();
       });
       box.appendChild(t);
@@ -245,6 +187,7 @@ export function buildEditor(doc) {
     // Keep three panel slots; layouts with two panels reuse the third harmlessly.
     while (state.panels.length < 3) state.panels.push({ photo: 0, zoom: 1, ox: 0, oy: 0 });
     while (state.panels.length < 4) state.panels.push({ photo: 0, zoom: 1, ox: 0, oy: 0 });
+    while (state.panels.length < 5) state.panels.push({ photo: 0, zoom: 1, ox: 0, oy: 0 });
     redraw();
   }));
   doc.querySelectorAll('[data-grade]').forEach((b) => b.addEventListener('click', () => {
@@ -289,6 +232,15 @@ export function buildEditor(doc) {
       setStatus(faceSafe.checked ? 'Face-safe on — panning keeps heads and chins inside the frame.' : 'Face-safe off — you can pan to the foot of a photo.');
     });
   }
+  const toonBox = $('toon');
+  if (toonBox) {
+    toonBox.addEventListener('change', () => {
+      pushUndo();
+      state.toon = toonBox.checked;
+      redraw();
+      setStatus(toonBox.checked ? 'Illustrated look on — photos are posterised into flat poster colours.' : 'Illustrated look off — photos stay photographic.');
+    });
+  }
   const undoBtn = $('undo');
   if (undoBtn) undoBtn.addEventListener('click', undo);
   doc.addEventListener('keydown', (e) => {
@@ -311,6 +263,7 @@ export function buildEditor(doc) {
   $('panel-photo').addEventListener('change', (e) => {
     pushUndo();
     state.panels[state.selected].photo = Number(e.target.value);
+    delete state.panels[state.selected].art;
     redraw();
   });
   const panelGrade = $('panel-grade');
@@ -324,6 +277,15 @@ export function buildEditor(doc) {
       setStatus(g ? `Panel ${state.selected + 1} now uses the ${GRADES[g]?.name ?? g} grade.` : `Panel ${state.selected + 1} follows the cover grade.`);
     });
   }
+  doc.querySelectorAll('[data-art]').forEach((b) => b.addEventListener('click', () => {
+    pushUndo();
+    const p = state.panels[state.selected];
+    const a = b.dataset.art;
+    if (a) p.art = a;
+    else delete p.art;
+    redraw();
+    setStatus(a ? `Panel ${state.selected + 1} now shows the drawn ${a} scene.` : `Panel ${state.selected + 1} is a photo panel again.`);
+  }));
   $('reset-panel').addEventListener('click', () => {
     pushUndo();
     state.panels[state.selected] = { photo: state.panels[state.selected].photo, zoom: 1, ox: 0, oy: 0 };
